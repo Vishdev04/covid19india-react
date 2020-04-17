@@ -1,8 +1,12 @@
 import React, {useState, useEffect, useCallback} from 'react';
 import * as Icon from 'react-feather';
-import {formatDate, formatDateAbsolute} from '../utils/common-functions';
+import {
+  formatDate,
+  formatDateAbsolute,
+  formatNumber,
+} from '../utils/common-functions';
 import {formatDistance} from 'date-fns';
-import {Link} from 'react-router-dom';
+import {Tooltip} from 'react-lightweight-tooltip';
 
 function Row(props) {
   const [state, setState] = useState(props.state);
@@ -83,39 +87,65 @@ function Row(props) {
 
   return (
     <React.Fragment>
-      <span
-        className={`dropdown ${
-          props.reveal ? 'rotateRightDown' : 'rotateDownRight'
-        }`}
-        style={{display: !props.total ? '' : 'none'}}
-        onClick={() => {
-          handleReveal();
-        }}
-      >
-        <Icon.ChevronDown />
-      </span>
       <tr
         className={props.total ? 'state is-total' : 'state'}
         onMouseEnter={() => props.onHighlightState?.(state, props.index)}
         onMouseLeave={() => props.onHighlightState?.()}
-        touchstart={() => props.onHighlightState?.(state, props.index)}
+        /* onTouchStart={() => props.onHighlightState?.(state, props.index)}*/
         onClick={!props.total ? handleReveal : null}
         style={{background: props.index % 2 === 0 ? '#f8f9fa' : ''}}
       >
         <td style={{fontWeight: 600}}>
-          {state.state}
-          {state.state === 'West Bengal' && (
-            <Link to="/faq">
-              <Icon.AlertCircle />
-            </Link>
-          )}
+          <div className="table__title-wrapper">
+            <span
+              className={`dropdown ${
+                props.reveal ? 'rotateRightDown' : 'rotateDownRight'
+              }`}
+              style={{display: !props.total ? '' : 'none'}}
+              onClick={() => {
+                handleReveal();
+              }}
+            >
+              <Icon.ChevronDown />
+            </span>
+            <span className="actual__title-wrapper">
+              {state.state}
+              {state.statenotes && (
+                <Tooltip
+                  content={[`${state.statenotes}`]}
+                  styles={{
+                    tooltip: {
+                      background: '#000',
+                      borderRadius: '5px',
+                      fontSize: '1rem',
+                      left: '250%',
+                      opacity: 1,
+                      padding: '0.5rem',
+                    },
+                    wrapper: {
+                      cursor: 'cursor',
+                      display: 'inline-block',
+                      position: 'relative',
+                      textAlign: 'center',
+                    },
+                  }}
+                >
+                  <Icon.Info />
+                </Tooltip>
+              )}
+            </span>
+          </div>
         </td>
         <td>
           <span className="deltas" style={{color: '#ff073a'}}>
             {state.deltaconfirmed > 0 && <Icon.ArrowUp />}
             {state.deltaconfirmed > 0 ? `${state.deltaconfirmed}` : ''}
           </span>
-          {parseInt(state.confirmed) === 0 ? '-' : state.confirmed}
+          <span className="table__count-text">
+            {parseInt(state.confirmed) === 0
+              ? '-'
+              : formatNumber(state.confirmed)}
+          </span>
         </td>
         <td
           style={{color: parseInt(state.active) === 0 ? '#B5B5B5' : 'inherit'}}
@@ -124,7 +154,7 @@ function Row(props) {
             {!state.delta.active==0 && <Icon.ArrowUp/>}
             {state.delta.active>0 ? `${state.delta.active}` : ''}
           </span>*/}
-          {parseInt(state.active) === 0 ? '-' : state.active}
+          {parseInt(state.active) === 0 ? '-' : formatNumber(state.active)}
         </td>
         <td
           style={{
@@ -135,7 +165,11 @@ function Row(props) {
             {state.deltarecovered > 0 && <Icon.ArrowUp />}
             {state.deltarecovered > 0 ? `${state.deltarecovered}` : ''}
           </span>
-          {parseInt(state.recovered) === 0 ? '-' : state.recovered}
+          <span className="table__count-text">
+            {parseInt(state.recovered) === 0
+              ? '-'
+              : formatNumber(state.recovered)}
+          </span>
         </td>
         <td
           style={{color: parseInt(state.deaths) === 0 ? '#B5B5B5' : 'inherit'}}
@@ -144,7 +178,9 @@ function Row(props) {
             {state.deltadeaths > 0 && <Icon.ArrowUp />}
             {state.deltadeaths > 0 ? `${state.deltadeaths}` : ''}
           </span>
-          {parseInt(state.deaths) === 0 ? '-' : state.deaths}
+          <span className="table__count-text">
+            {parseInt(state.deaths) === 0 ? '-' : formatNumber(state.deaths)}
+          </span>
         </td>
       </tr>
 
@@ -154,7 +190,7 @@ function Row(props) {
       >
         <td colSpan={2}>
           <div className="last-update">
-            <h6>Last Updated&nbsp;</h6>
+            <h6>Last updated&nbsp;</h6>
             <h6
               title={
                 isNaN(Date.parse(formatDate(props.state.lastupdatedtime)))
@@ -167,7 +203,7 @@ function Row(props) {
                 : `${formatDistance(
                     new Date(formatDate(props.state.lastupdatedtime)),
                     new Date()
-                  )} Ago`}
+                  )} ago`}
             </h6>
           </div>
         </td>
@@ -239,9 +275,9 @@ function Row(props) {
                     props.onHighlightDistrict?.(district, state, props.index)
                   }
                   onMouseLeave={() => props.onHighlightDistrict?.()}
-                  touchstart={() =>
+                  /* onTouchStart={() =>
                     props.onHighlightDistrict?.(district, state, props.index)
-                  }
+                  }*/
                 >
                   <td style={{fontWeight: 600}}>{district}</td>
                   <td>
@@ -253,7 +289,9 @@ function Row(props) {
                         ? `${sortedDistricts[district].delta.confirmed}`
                         : ''}
                     </span>
-                    {sortedDistricts[district].confirmed}
+                    <span className="table__count-text">
+                      {formatNumber(sortedDistricts[district].confirmed)}
+                    </span>
                   </td>
                 </tr>
               );
@@ -262,23 +300,50 @@ function Row(props) {
           })}
 
       {sortedDistricts?.Unknown && (
-        <tr
-          className={`district`}
-          style={{display: props.reveal && !props.total ? '' : 'none'}}
-        >
-          <td style={{fontWeight: 600}}>Unknown</td>
-          <td>
-            <span className="deltas" style={{color: '#ff073a'}}>
-              {sortedDistricts['Unknown'].delta.confirmed > 0 && (
-                <Icon.ArrowUp />
-              )}
-              {sortedDistricts['Unknown'].delta.confirmed > 0
-                ? `${sortedDistricts['Unknown'].delta.confirmed}`
-                : ''}
-            </span>
-            {sortedDistricts['Unknown'].confirmed}
-          </td>
-        </tr>
+        <React.Fragment>
+          <tr
+            className={`district`}
+            style={{display: props.reveal && !props.total ? '' : 'none'}}
+          >
+            <td className="unknown" style={{fontWeight: 600}}>
+              Unknown
+              <Tooltip
+                content={['Awaiting patient-level details from State Bulletin']}
+                styles={{
+                  tooltip: {
+                    background: '#000',
+                    borderRadius: '5px',
+                    fontSize: '1rem',
+                    left: '250%',
+                    opacity: 1,
+                    padding: '0.5rem',
+                  },
+                  wrapper: {
+                    cursor: 'cursor',
+                    display: 'inline-block',
+                    position: 'relative',
+                    textAlign: 'center',
+                  },
+                }}
+              >
+                <Icon.Info />
+              </Tooltip>
+            </td>
+            <td>
+              <span className="deltas" style={{color: '#ff073a'}}>
+                {sortedDistricts['Unknown'].delta.confirmed > 0 && (
+                  <Icon.ArrowUp />
+                )}
+                {sortedDistricts['Unknown'].delta.confirmed > 0
+                  ? `${sortedDistricts['Unknown'].delta.confirmed}`
+                  : ''}
+              </span>
+              <span className="table__count-text">
+                {formatNumber(sortedDistricts['Unknown'].confirmed)}
+              </span>
+            </td>
+          </tr>
+        </React.Fragment>
       )}
 
       <tr
